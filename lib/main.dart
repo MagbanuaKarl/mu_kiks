@@ -8,7 +8,7 @@ import 'services/music_scanner.dart';
 import 'models/song_model.dart';
 
 void main() {
-  WidgetsFlutterBinding.ensureInitialized(); // <--- ADD THIS
+  WidgetsFlutterBinding.ensureInitialized();
   runApp(const MuKiksApp());
 }
 
@@ -20,11 +20,10 @@ class MuKiksApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => PlayerProvider()),
-        // Add more providers as needed
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
-        title: 'MewKiks',
+        title: 'MuKiks',
         theme: darkTheme,
         home: const HomeInitializer(),
       ),

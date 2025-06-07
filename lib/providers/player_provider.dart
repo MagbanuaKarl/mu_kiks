@@ -4,6 +4,7 @@ import 'package:mu_kiks/models/import.dart';
 
 class PlayerProvider extends ChangeNotifier {
   final AudioPlayer _audioPlayer = AudioPlayer();
+
   List<Song> _playlist = [];
   int _currentIndex = 0;
 
@@ -15,11 +16,13 @@ class PlayerProvider extends ChangeNotifier {
   Duration _totalDuration = Duration.zero;
 
   PlayerProvider() {
+    // Listen to audio position updates
     _audioPlayer.positionStream.listen((position) {
       _currentPosition = position;
       notifyListeners();
     });
 
+    // Listen to duration updates
     _audioPlayer.durationStream.listen((duration) {
       if (duration != null) {
         _totalDuration = duration;
@@ -27,12 +30,24 @@ class PlayerProvider extends ChangeNotifier {
       }
     });
 
+    // Listen to state changes (playing, paused, completed)
     _audioPlayer.playerStateStream.listen((state) {
+      final processingState = state.processingState;
+      if (processingState == ProcessingState.completed) {
+        if (_isLoopingOne) {
+          _playCurrent();
+        } else {
+          next();
+        }
+      }
       notifyListeners();
     });
   }
 
-  // Playback controls
+  // ───────────────────────────────────────────────────────────────
+  // Playback Controls
+  // ───────────────────────────────────────────────────────────────
+
   Future<void> setPlaylist(List<Song> songs, {int startIndex = 0}) async {
     _playlist = songs;
     _currentIndex = startIndex;
@@ -42,8 +57,12 @@ class PlayerProvider extends ChangeNotifier {
   Future<void> _playCurrent() async {
     final song = currentSong;
     if (song != null) {
-      await _audioPlayer.setFilePath(song.path);
-      await _audioPlayer.play();
+      try {
+        await _audioPlayer.setFilePath(song.path);
+        await _audioPlayer.play();
+      } catch (e) {
+        debugPrint('Error playing ${song.title}: $e');
+      }
     }
   }
 
@@ -51,12 +70,13 @@ class PlayerProvider extends ChangeNotifier {
   void pause() => _audioPlayer.pause();
 
   void next() {
-    if (_isLoopingOne) {
-      _playCurrent();
-      return;
-    }
+    if (_playlist.isEmpty) return;
 
-    _currentIndex = (_currentIndex + 1) % _playlist.length;
+    if (_isShuffling) {
+      _currentIndex = _getRandomIndex();
+    } else {
+      _currentIndex = (_currentIndex + 1) % _playlist.length;
+    }
     _playCurrent();
   }
 
@@ -72,6 +92,10 @@ class PlayerProvider extends ChangeNotifier {
   void seek(Duration position) {
     _audioPlayer.seek(position);
   }
+
+  // ───────────────────────────────────────────────────────────────
+  // Shuffle & Loop Modes
+  // ───────────────────────────────────────────────────────────────
 
   void toggleShuffle() {
     _isShuffling = !_isShuffling;
@@ -92,7 +116,19 @@ class PlayerProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // Getters
+  int _getRandomIndex() {
+    if (_playlist.length <= 1) return _currentIndex;
+    int newIndex;
+    do {
+      newIndex = DateTime.now().millisecondsSinceEpoch % _playlist.length;
+    } while (newIndex == _currentIndex);
+    return newIndex;
+  }
+
+  // ───────────────────────────────────────────────────────────────
+  // Getters for UI
+  // ───────────────────────────────────────────────────────────────
+
   Song? get currentSong =>
       (_playlist.isNotEmpty && _currentIndex < _playlist.length)
           ? _playlist[_currentIndex]
@@ -104,6 +140,12 @@ class PlayerProvider extends ChangeNotifier {
   bool get isShuffling => _isShuffling;
   bool get isLooping => _isLooping;
   bool get isLoopingOne => _isLoopingOne;
+  List<Song> get playlist => _playlist;
+  int get currentIndex => _currentIndex;
+
+  // ───────────────────────────────────────────────────────────────
+  // Cleanup
+  // ───────────────────────────────────────────────────────────────
 
   @override
   void dispose() {
