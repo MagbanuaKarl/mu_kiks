@@ -24,7 +24,7 @@ class MuKiksApp extends StatelessWidget {
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
-        title: 'MuKiks',
+        title: 'MewKiks',
         theme: darkTheme,
         home: const HomeInitializer(),
       ),
