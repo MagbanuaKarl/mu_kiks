@@ -31,11 +31,21 @@ class FileUtils {
   }
 
   /// Move .mp3 file to MuKiks music directory (preserve file name)
+
+  // For testing
+  // static Future<File> moveFileToMuKiks(File file) async {
+  //   final muKiksDir = await getMuKiksMusicDirectory();
+  //   final newPath = p.join(muKiksDir.path, p.basename(file.path));
+  //   final newFile =
+  //       await file.copy(newPath); // Can also use .rename() but copy is safer
+  //   return newFile;
+  // }
+
+  // For Release
   static Future<File> moveFileToMuKiks(File file) async {
     final muKiksDir = await getMuKiksMusicDirectory();
     final newPath = p.join(muKiksDir.path, p.basename(file.path));
-    final newFile =
-        await file.copy(newPath); // Can also use .rename() but copy is safer
+    final newFile = await file.rename(newPath); // Actually moves the file
     return newFile;
   }
 

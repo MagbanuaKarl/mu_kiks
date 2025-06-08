@@ -4,7 +4,6 @@ import 'package:mu_kiks/core/import.dart';
 import 'package:mu_kiks/models/import.dart';
 import 'package:mu_kiks/views/import.dart';
 import 'package:mu_kiks/providers/player_provider.dart';
-import 'package:mu_kiks/views/now_playing/now_playing_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   final List<Song> songs;
@@ -23,6 +22,17 @@ class HomeScreen extends StatelessWidget {
           style: AppTextStyles.headline,
         ),
         centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.playlist_play),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const PlaylistScreen()),
+              );
+            },
+          ),
+        ],
       ),
       body: songs.isEmpty
           ? Center(
@@ -41,7 +51,6 @@ class HomeScreen extends StatelessWidget {
                     final playerProvider = context.read<PlayerProvider>();
                     await playerProvider.setPlaylist(songs, startIndex: index);
 
-                    // Navigate to now playing screen
                     Navigator.push(
                       context,
                       MaterialPageRoute(

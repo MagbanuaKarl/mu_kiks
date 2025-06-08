@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mu_kiks/core/import.dart';
 import 'package:mu_kiks/models/import.dart';
+import 'package:mu_kiks/views/import.dart';
 
 class SongTile extends StatelessWidget {
   final Song song;
@@ -15,7 +16,7 @@ class SongTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return InkWell(
-      onTap: onTap, // Optional
+      onTap: onTap,
       borderRadius: BorderRadius.circular(12),
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
@@ -47,9 +48,44 @@ class SongTile extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 8),
-            Icon(Icons.more_vert, color: AppColors.textSecondary),
+            GestureDetector(
+              onTap: () {
+                showModalBottomSheet(
+                  context: context,
+                  backgroundColor: AppColors.surface,
+                  shape: const RoundedRectangleBorder(
+                    borderRadius:
+                        BorderRadius.vertical(top: Radius.circular(16)),
+                  ),
+                  builder: (_) => _buildOptionsSheet(context),
+                );
+              },
+              child: Icon(Icons.more_vert, color: AppColors.textSecondary),
+            ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildOptionsSheet(BuildContext context) {
+    return SafeArea(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ListTile(
+            leading:
+                const Icon(Icons.playlist_add, color: AppColors.textPrimary),
+            title: const Text('Add to Playlist', style: AppTextStyles.body),
+            onTap: () {
+              Navigator.pop(context); // Close bottom sheet
+              showDialog(
+                context: context,
+                builder: (_) => AddToPlaylistDialog(song: song),
+              );
+            },
+          ),
+        ],
       ),
     );
   }
