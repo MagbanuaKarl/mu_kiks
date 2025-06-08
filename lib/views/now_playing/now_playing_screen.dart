@@ -74,7 +74,47 @@ class NowPlayingScreen extends StatelessWidget {
 
                 const SizedBox(height: 30),
 
-                // Controls
+                // ──────── Shuffle & Loop Buttons ────────
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    IconButton(
+                      icon: Icon(
+                        Icons.shuffle,
+                        color: player.isShuffling
+                            ? Colors.greenAccent
+                            : Colors.white54,
+                      ),
+                      tooltip: 'Shuffle',
+                      onPressed: player.toggleShuffle,
+                    ),
+                    const SizedBox(width: 20),
+                    IconButton(
+                      icon: Icon(
+                        player.isLoopingOne ? Icons.repeat_one : Icons.repeat,
+                        color: (player.isLooping || player.isLoopingOne)
+                            ? Colors.greenAccent
+                            : Colors.white54,
+                      ),
+                      tooltip: player.isLoopingOne
+                          ? 'Repeat One'
+                          : (player.isLooping ? 'Repeat All' : 'Loop Off'),
+                      onPressed: () {
+                        if (player.isLoopingOne) {
+                          player.toggleLoopOne(); // turns loop off
+                        } else if (player.isLooping) {
+                          player.toggleLoopOne(); // switch to loop one
+                        } else {
+                          player.toggleLoopPlaylist(); // switch to loop all
+                        }
+                      },
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 10),
+
+                // ──────── Playback Controls ────────
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [

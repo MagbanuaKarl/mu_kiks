@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import 'config/theme.dart';
 import 'providers/player_provider.dart';
+import 'providers/playlist_provider.dart';
 import 'views/home/home_screen.dart';
 import 'services/music_scanner.dart';
 import 'models/song_model.dart';
@@ -20,6 +21,7 @@ class MuKiksApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => PlayerProvider()),
+        ChangeNotifierProvider(create: (_) => PlaylistProvider()),
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
@@ -50,6 +52,9 @@ class _HomeInitializerState extends State<HomeInitializer> {
 
   Future<void> _loadSongs() async {
     final songs = await MusicScanner.scanAndImportSongs();
+
+    await Provider.of<PlaylistProvider>(context, listen: false).loadPlaylists();
+
     setState(() {
       _songs = songs;
       _loading = false;
