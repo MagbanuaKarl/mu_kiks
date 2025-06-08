@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:mu_kiks/models/import.dart';
+import 'dart:math';
 
 class PlayerProvider extends ChangeNotifier {
   final AudioPlayer _audioPlayer = AudioPlayer();
 
-  List<Song> _playlist = [];
-  int _currentIndex = 0;
+  List<Song> _playlist = []; // Original ordered playlist
+  List<int> _shuffledIndices = []; // Index order for shuffle
+  int _currentIndex = 0; // Index in current mode (shuffle or not)
 
   bool _isShuffling = false;
   bool _isLooping = false;
@@ -16,13 +18,11 @@ class PlayerProvider extends ChangeNotifier {
   Duration _totalDuration = Duration.zero;
 
   PlayerProvider() {
-    // Listen to audio position updates
     _audioPlayer.positionStream.listen((position) {
       _currentPosition = position;
       notifyListeners();
     });
 
-    // Listen to duration updates
     _audioPlayer.durationStream.listen((duration) {
       if (duration != null) {
         _totalDuration = duration;
@@ -30,7 +30,6 @@ class PlayerProvider extends ChangeNotifier {
       }
     });
 
-    // Listen to state changes (playing, paused, completed)
     _audioPlayer.playerStateStream.listen((state) {
       final processingState = state.processingState;
       if (processingState == ProcessingState.completed) {
@@ -51,6 +50,9 @@ class PlayerProvider extends ChangeNotifier {
   Future<void> setPlaylist(List<Song> songs, {int startIndex = 0}) async {
     _playlist = songs;
     _currentIndex = startIndex;
+    if (_isShuffling) {
+      _generateShuffledIndices(preserveCurrent: true);
+    }
     await _playCurrent();
   }
 
@@ -72,8 +74,10 @@ class PlayerProvider extends ChangeNotifier {
   void next() {
     if (_playlist.isEmpty) return;
 
-    if (_isShuffling) {
-      _currentIndex = _getRandomIndex();
+    if (_isShuffling && _shuffledIndices.isNotEmpty) {
+      int currentShufflePos = _shuffledIndices.indexOf(_currentIndex);
+      int nextShufflePos = (currentShufflePos + 1) % _shuffledIndices.length;
+      _currentIndex = _shuffledIndices[nextShufflePos];
     } else {
       _currentIndex = (_currentIndex + 1) % _playlist.length;
     }
@@ -84,7 +88,15 @@ class PlayerProvider extends ChangeNotifier {
     if (_currentPosition > const Duration(seconds: 3)) {
       _audioPlayer.seek(Duration.zero);
     } else {
-      _currentIndex = (_currentIndex - 1 + _playlist.length) % _playlist.length;
+      if (_isShuffling && _shuffledIndices.isNotEmpty) {
+        int currentShufflePos = _shuffledIndices.indexOf(_currentIndex);
+        int prevShufflePos = (currentShufflePos - 1 + _shuffledIndices.length) %
+            _shuffledIndices.length;
+        _currentIndex = _shuffledIndices[prevShufflePos];
+      } else {
+        _currentIndex =
+            (_currentIndex - 1 + _playlist.length) % _playlist.length;
+      }
       _playCurrent();
     }
   }
@@ -99,7 +111,25 @@ class PlayerProvider extends ChangeNotifier {
 
   void toggleShuffle() {
     _isShuffling = !_isShuffling;
+
+    if (_isShuffling) {
+      _generateShuffledIndices(preserveCurrent: true);
+    }
+
     notifyListeners();
+  }
+
+  void _generateShuffledIndices({bool preserveCurrent = false}) {
+    final originalIndices = List.generate(_playlist.length, (i) => i);
+
+    if (preserveCurrent) {
+      originalIndices.remove(_currentIndex);
+      originalIndices.shuffle(Random());
+      _shuffledIndices = [_currentIndex, ...originalIndices];
+    } else {
+      originalIndices.shuffle(Random());
+      _shuffledIndices = originalIndices;
+    }
   }
 
   void toggleLoopPlaylist() {
@@ -114,15 +144,6 @@ class PlayerProvider extends ChangeNotifier {
     _isLooping = false;
     _audioPlayer.setLoopMode(_isLoopingOne ? LoopMode.one : LoopMode.off);
     notifyListeners();
-  }
-
-  int _getRandomIndex() {
-    if (_playlist.length <= 1) return _currentIndex;
-    int newIndex;
-    do {
-      newIndex = DateTime.now().millisecondsSinceEpoch % _playlist.length;
-    } while (newIndex == _currentIndex);
-    return newIndex;
   }
 
   // ───────────────────────────────────────────────────────────────
