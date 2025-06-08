@@ -1,6 +1,6 @@
-# mu_kiks
+# MuKiks
 
-A new Flutter project.
+A Flutter project created becauase built in music players on android contains adds :D.
 
 ## Getting Started
 
