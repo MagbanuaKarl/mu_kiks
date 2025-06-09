@@ -88,4 +88,13 @@ class PlaylistService {
     );
     await savePlaylist(updated);
   }
+
+  // Rename an exisitng playlist
+  static Future<void> renamePlaylist(String playlistId, String newName) async {
+    final playlist = await loadPlaylistById(playlistId);
+    if (playlist != null) {
+      final updated = playlist.copyWith(name: newName);
+      await savePlaylist(updated);
+    }
+  }
 }
