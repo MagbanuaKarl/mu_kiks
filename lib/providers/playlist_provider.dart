@@ -58,6 +58,17 @@ class PlaylistProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  // Rename an specific playlist
+  Future<void> renamePlaylist(String playlistId, String newName) async {
+    final index = _playlists.indexWhere((p) => p.id == playlistId);
+    if (index == -1) return;
+
+    final updated = _playlists[index].copyWith(name: newName);
+    _playlists[index] = updated;
+    await PlaylistService.savePlaylist(updated);
+    notifyListeners();
+  }
+
   Playlist? getPlaylistById(String playlistId) {
     return _playlists.where((p) => p.id == playlistId).firstOrNull;
   }

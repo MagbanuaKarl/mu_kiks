@@ -37,4 +37,4 @@ flutter_launcher_icons:
   android: true
   image_path: "assets/icons/appIcon.png"
   adaptive_icon_background: "#333333"
-  adaptive_icon_foreground: "assets/icons/appIcon.png"  # Fixed: Should match your actual file location
+  adaptive_icon_foreground: "assets/icons/appIcon.png"
