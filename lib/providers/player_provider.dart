@@ -40,6 +40,10 @@ class PlayerProvider extends ChangeNotifier {
       }
       notifyListeners();
     });
+
+    _audioPlayer.playingStream.listen((playing) {
+      notifyListeners(); // Ensure UI reflects play/pause state
+    });
   }
 
   // ───────────────────────────────────────────────
@@ -54,8 +58,7 @@ class PlayerProvider extends ChangeNotifier {
       _generateShuffledIndices(preserveCurrent: true);
     }
 
-    // Just prepare the audio, don't start playing
-    await _prepareCurrent();
+    await _prepareCurrent(); // Prepares audio
     notifyListeners();
   }
 
@@ -64,7 +67,6 @@ class PlayerProvider extends ChangeNotifier {
     if (song != null) {
       try {
         await _audioPlayer.setFilePath(song.path);
-        // Don't call play() here
       } catch (e) {
         debugPrint('Error preparing ${song.title}: $e');
       }
@@ -73,11 +75,20 @@ class PlayerProvider extends ChangeNotifier {
 
   Future<void> _playCurrent() async {
     await _prepareCurrent();
-    await _audioPlayer.play(); // Now this just starts playback, doesn't wait
+    await _audioPlayer.play();
   }
 
   void play() => _audioPlayer.play();
   void pause() => _audioPlayer.pause();
+
+  void togglePlayPause() {
+    if (isPlaying) {
+      pause();
+    } else {
+      play();
+    }
+    notifyListeners();
+  }
 
   void next() {
     if (_playlist.isEmpty) return;
@@ -169,14 +180,19 @@ class PlayerProvider extends ChangeNotifier {
           : null;
 
   bool get isPlaying => _audioPlayer.playing;
+  bool get hasActiveSong => currentSong != null;
+
   Duration get currentPosition => _currentPosition;
   Duration get totalDuration => _totalDuration;
+
   bool get isShuffling => _isShuffling;
   bool get isLooping => _isLooping;
   bool get isLoopingOne => _isLoopingOne;
+
   List<Song> get queue => _isShuffling
       ? _shuffledIndices.map((i) => _playlist[i]).toList()
       : _playlist;
+
   int get currentIndex => _currentIndex;
 
   // ───────────────────────────────────────────────
