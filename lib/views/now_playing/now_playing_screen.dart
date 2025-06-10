@@ -4,6 +4,7 @@ import 'package:mu_kiks/providers/player_provider.dart';
 import 'package:mu_kiks/views/home/widgets/duration_slider.dart';
 import 'package:mu_kiks/core/constants/styles.dart';
 import 'package:mu_kiks/core/constants/colors.dart';
+import 'package:mu_kiks/views/now_playing/widgets/player_controls.dart';
 
 class NowPlayingScreen extends StatelessWidget {
   const NowPlayingScreen({super.key});
@@ -74,78 +75,8 @@ class NowPlayingScreen extends StatelessWidget {
 
                 const SizedBox(height: 30),
 
-                // ──────── Shuffle & Loop Buttons ────────
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    IconButton(
-                      icon: Icon(
-                        Icons.shuffle,
-                        color: player.isShuffling
-                            ? Colors.greenAccent
-                            : Colors.white54,
-                      ),
-                      tooltip: 'Shuffle',
-                      onPressed: player.toggleShuffle,
-                    ),
-                    const SizedBox(width: 20),
-                    IconButton(
-                      icon: Icon(
-                        player.isLoopingOne ? Icons.repeat_one : Icons.repeat,
-                        color: (player.isLooping || player.isLoopingOne)
-                            ? Colors.greenAccent
-                            : Colors.white54,
-                      ),
-                      tooltip: player.isLoopingOne
-                          ? 'Repeat One'
-                          : (player.isLooping ? 'Repeat All' : 'Loop Off'),
-                      onPressed: () {
-                        if (player.isLoopingOne) {
-                          player.toggleLoopOne(); // turns loop off
-                        } else if (player.isLooping) {
-                          player.toggleLoopOne(); // switch to loop one
-                        } else {
-                          player.toggleLoopPlaylist(); // switch to loop all
-                        }
-                      },
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 10),
-
-                // ──────── Playback Controls ────────
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.skip_previous_rounded),
-                      iconSize: 36,
-                      color: Colors.white,
-                      onPressed: player.previous,
-                    ),
-                    const SizedBox(width: 20),
-                    IconButton(
-                      icon: Icon(
-                        player.isPlaying
-                            ? Icons.pause_circle_filled
-                            : Icons.play_circle_fill,
-                      ),
-                      iconSize: 64,
-                      color: Colors.white,
-                      onPressed: () {
-                        player.isPlaying ? player.pause() : player.play();
-                      },
-                    ),
-                    const SizedBox(width: 20),
-                    IconButton(
-                      icon: const Icon(Icons.skip_next_rounded),
-                      iconSize: 36,
-                      color: Colors.white,
-                      onPressed: player.next,
-                    ),
-                  ],
-                ),
+                // Player Controls (shuffle, prev, play/pause, next, repeat)
+                const PlayerControls(),
 
                 const Spacer(),
               ],
