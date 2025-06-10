@@ -37,6 +37,7 @@ class PlaylistTile extends StatelessWidget {
         '${playlist.songs.length} song(s)',
         style: AppTextStyles.caption,
       ),
+      onTap: onTap, // <-- ADD THIS LINE
       trailing: PopupMenuButton<String>(
         icon: const Icon(Icons.more_vert, color: AppColors.textPrimary),
         onSelected: (value) {
