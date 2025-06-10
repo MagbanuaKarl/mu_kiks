@@ -8,7 +8,7 @@ class PlayerProvider extends ChangeNotifier {
 
   List<Song> _playlist = []; // Original ordered playlist
   List<int> _shuffledIndices = []; // Index order for shuffle
-  int _currentIndex = 0; // Index in current mode (shuffle or not)
+  int _currentIndex = 0;
 
   bool _isShuffling = false;
   bool _isLooping = false;
@@ -31,8 +31,7 @@ class PlayerProvider extends ChangeNotifier {
     });
 
     _audioPlayer.playerStateStream.listen((state) {
-      final processingState = state.processingState;
-      if (processingState == ProcessingState.completed) {
+      if (state.processingState == ProcessingState.completed) {
         if (_isLoopingOne) {
           _playCurrent();
         } else {
@@ -43,17 +42,20 @@ class PlayerProvider extends ChangeNotifier {
     });
   }
 
-  // ───────────────────────────────────────────────────────────────
+  // ───────────────────────────────────────────────
   // Playback Controls
-  // ───────────────────────────────────────────────────────────────
+  // ───────────────────────────────────────────────
 
   Future<void> setPlaylist(List<Song> songs, {int startIndex = 0}) async {
     _playlist = songs;
     _currentIndex = startIndex;
+
     if (_isShuffling) {
       _generateShuffledIndices(preserveCurrent: true);
     }
+
     await _playCurrent();
+    notifyListeners();
   }
 
   Future<void> _playCurrent() async {
@@ -81,7 +83,9 @@ class PlayerProvider extends ChangeNotifier {
     } else {
       _currentIndex = (_currentIndex + 1) % _playlist.length;
     }
+
     _playCurrent();
+    notifyListeners();
   }
 
   void previous() {
@@ -97,17 +101,20 @@ class PlayerProvider extends ChangeNotifier {
         _currentIndex =
             (_currentIndex - 1 + _playlist.length) % _playlist.length;
       }
+
       _playCurrent();
     }
+
+    notifyListeners();
   }
 
   void seek(Duration position) {
     _audioPlayer.seek(position);
   }
 
-  // ───────────────────────────────────────────────────────────────
+  // ───────────────────────────────────────────────
   // Shuffle & Loop Modes
-  // ───────────────────────────────────────────────────────────────
+  // ───────────────────────────────────────────────
 
   void toggleShuffle() {
     _isShuffling = !_isShuffling;
@@ -146,9 +153,9 @@ class PlayerProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // ───────────────────────────────────────────────────────────────
+  // ───────────────────────────────────────────────
   // Getters for UI
-  // ───────────────────────────────────────────────────────────────
+  // ───────────────────────────────────────────────
 
   Song? get currentSong =>
       (_playlist.isNotEmpty && _currentIndex < _playlist.length)
@@ -161,12 +168,14 @@ class PlayerProvider extends ChangeNotifier {
   bool get isShuffling => _isShuffling;
   bool get isLooping => _isLooping;
   bool get isLoopingOne => _isLoopingOne;
-  List<Song> get playlist => _playlist;
+  List<Song> get queue => _isShuffling
+      ? _shuffledIndices.map((i) => _playlist[i]).toList()
+      : _playlist;
   int get currentIndex => _currentIndex;
 
-  // ───────────────────────────────────────────────────────────────
+  // ───────────────────────────────────────────────
   // Cleanup
-  // ───────────────────────────────────────────────────────────────
+  // ───────────────────────────────────────────────
 
   @override
   void dispose() {
