@@ -57,6 +57,15 @@ class PlaylistScreen extends StatelessWidget {
     );
   }
 
+  void _handlePlaylistTap(BuildContext context, Playlist playlist, int index) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => PlaylistDetailScreen(playlistId: playlist.id),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -93,9 +102,7 @@ class PlaylistScreen extends StatelessWidget {
                 onLongPress: () => _showOptionsMenu(context, playlist),
                 child: PlaylistTile(
                   playlist: playlist,
-                  onTap: () {
-                    // TODO: Navigate to playlist detail page if needed
-                  },
+                  onTap: () => _handlePlaylistTap(context, playlist, index),
                 ),
               );
             },
