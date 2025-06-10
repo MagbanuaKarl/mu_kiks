@@ -54,20 +54,26 @@ class PlayerProvider extends ChangeNotifier {
       _generateShuffledIndices(preserveCurrent: true);
     }
 
-    await _playCurrent();
+    // Just prepare the audio, don't start playing
+    await _prepareCurrent();
     notifyListeners();
   }
 
-  Future<void> _playCurrent() async {
+  Future<void> _prepareCurrent() async {
     final song = currentSong;
     if (song != null) {
       try {
         await _audioPlayer.setFilePath(song.path);
-        await _audioPlayer.play();
+        // Don't call play() here
       } catch (e) {
-        debugPrint('Error playing ${song.title}: $e');
+        debugPrint('Error preparing ${song.title}: $e');
       }
     }
+  }
+
+  Future<void> _playCurrent() async {
+    await _prepareCurrent();
+    await _audioPlayer.play(); // Now this just starts playback, doesn't wait
   }
 
   void play() => _audioPlayer.play();

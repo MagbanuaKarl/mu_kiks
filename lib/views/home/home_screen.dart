@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:mu_kiks/core/import.dart';
 import 'package:mu_kiks/models/import.dart';
 import 'package:mu_kiks/views/import.dart';
-import 'package:mu_kiks/providers/player_provider.dart';
+import 'package:mu_kiks/providers/import.dart';
 
 class HomeScreen extends StatelessWidget {
   final List<Song> songs;
@@ -17,7 +17,7 @@ class HomeScreen extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: AppColors.background,
         elevation: 0,
-        title: Text(
+        title: const Text(
           AppStrings.appName,
           style: AppTextStyles.headline,
         ),
@@ -35,7 +35,7 @@ class HomeScreen extends StatelessWidget {
         ],
       ),
       body: songs.isEmpty
-          ? Center(
+          ? const Center(
               child: Text(
                 AppStrings.noSongsFound,
                 style: AppTextStyles.body,
@@ -51,11 +51,13 @@ class HomeScreen extends StatelessWidget {
                     final playerProvider = context.read<PlayerProvider>();
                     await playerProvider.setPlaylist(songs, startIndex: index);
 
+                    // Explicitly start playback
+                    playerProvider.play();
+
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => const NowPlayingScreen(),
-                      ),
+                          builder: (_) => const NowPlayingScreen()),
                     );
                   },
                   child: SongTile(song: song),
