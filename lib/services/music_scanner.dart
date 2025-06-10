@@ -91,7 +91,7 @@ class MusicScanner {
       }
     } catch (e) {
       // Skip directories that can't be accessed
-      // print('Skipping directory ${directory.path}: Access denied');
+      print('Skipping directory ${directory.path}: Access denied');
     }
   }
 
