@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'config/theme.dart';
-import 'providers/player_provider.dart';
-import 'providers/playlist_provider.dart';
-import 'views/home/home_screen.dart';
-import 'services/music_scanner.dart';
-import 'models/song_model.dart';
+import 'providers/import.dart';
+import 'views/import.dart';
+import 'services/import.dart';
+import 'models/import.dart';
+import 'widgets/import.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -52,7 +52,6 @@ class _HomeInitializerState extends State<HomeInitializer> {
 
   Future<void> _loadSongs() async {
     final songs = await MusicScanner.scanAndImportSongs();
-
     await Provider.of<PlaylistProvider>(context, listen: false).loadPlaylists();
 
     setState(() {
@@ -71,6 +70,17 @@ class _HomeInitializerState extends State<HomeInitializer> {
         ),
       );
     }
-    return HomeScreen(songs: _songs);
+
+    return Stack(
+      children: [
+        HomeScreen(songs: _songs),
+        const Positioned(
+          left: 0,
+          right: 0,
+          bottom: 0,
+          child: MiniPlayer(),
+        ),
+      ],
+    );
   }
 }
