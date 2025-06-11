@@ -1,27 +1,33 @@
+import 'dart:io';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:device_info_plus/device_info_plus.dart';
 
 class PermissionUtils {
-  static Future<bool> requestStoragePermission() async {
-    final status = await Permission.storage.status;
-    if (status.isGranted) return true;
-
-    final result = await Permission.storage.request();
-    return result.isGranted;
-  }
-
-  static Future<bool> requestManageExternalStorage() async {
-    // For Android 11+
-    final status = await Permission.manageExternalStorage.status;
-    if (status.isGranted) return true;
-
-    final result = await Permission.manageExternalStorage.request();
-    return result.isGranted;
-  }
-
   static Future<bool> requestAllNeededPermissions() async {
-    bool storageGranted = await requestStoragePermission();
-    bool manageStorageGranted = await requestManageExternalStorage();
+    if (!Platform.isAndroid) return true;
 
-    return storageGranted && manageStorageGranted;
+    final androidInfo = await DeviceInfoPlugin().androidInfo;
+    final sdkInt = androidInfo.version.sdkInt;
+
+    print('Android SDK Version: $sdkInt');
+
+    if (sdkInt >= 33) {
+      // Android 13+ (Tiramisu+): Use audio permission
+      final audioStatus = await Permission.audio.request();
+      return audioStatus.isGranted;
+    } else if (sdkInt >= 30) {
+      // Android 11–12: MANAGE_EXTERNAL_STORAGE
+      final manageStatus = await Permission.manageExternalStorage.request();
+
+      if (!manageStatus.isGranted) {
+        await openAppSettings(); // Optional: guide user to manually allow
+      }
+
+      return manageStatus.isGranted;
+    } else {
+      // Android 10 and below: legacy storage
+      final storageStatus = await Permission.storage.request();
+      return storageStatus.isGranted;
+    }
   }
 }
