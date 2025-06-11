@@ -74,11 +74,8 @@ class _AddToPlaylistDialogState extends State<AddToPlaylistDialog> {
                             if (widget.song != null) {
                               playlistProvider.addSongToPlaylist(
                                   playlist.id, widget.song!);
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                    content:
-                                        Text('Added to "${playlist.name}"')),
-                              );
+                              context.showSuccessSnackBar(
+                                  'Added to "${playlist.name}"');
                             }
                             FocusScope.of(context).unfocus();
                             Navigator.pop(context);

@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:mu_kiks/providers/player_provider.dart';
 import 'package:mu_kiks/models/song_model.dart';
 import 'package:mu_kiks/views/now_playing/now_playing_screen.dart';
+import 'package:mu_kiks/core/import.dart';
 
 class MiniPlayer extends StatelessWidget {
   const MiniPlayer({super.key});
@@ -24,12 +25,20 @@ class MiniPlayer extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: Colors.grey[900],
-          border: const Border(top: BorderSide(color: Colors.black12)),
+          color: AppColors.surface,
+          border: Border(
+            top: BorderSide(
+              color: AppColors.textSecondary.withOpacity(0.2),
+            ),
+          ),
         ),
         child: Row(
           children: [
-            Icon(Icons.music_note, color: Colors.white, size: 32),
+            Icon(
+              Icons.music_note,
+              color: AppColors.primary,
+              size: 32,
+            ),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
@@ -38,13 +47,17 @@ class MiniPlayer extends StatelessWidget {
                 children: [
                   Text(
                     currentSong.title,
-                    style: const TextStyle(
-                        color: Colors.white, fontWeight: FontWeight.bold),
+                    style: AppTextStyles.body.copyWith(
+                      color: AppColors.textPrimary,
+                      fontWeight: FontWeight.bold,
+                    ),
                     overflow: TextOverflow.ellipsis,
                   ),
                   Text(
                     currentSong.artist,
-                    style: const TextStyle(color: Colors.white70, fontSize: 12),
+                    style: AppTextStyles.caption.copyWith(
+                      color: AppColors.textSecondary,
+                    ),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ],
@@ -53,14 +66,17 @@ class MiniPlayer extends StatelessWidget {
             IconButton(
               icon: Icon(
                 player.isPlaying ? Icons.pause : Icons.play_arrow,
-                color: Colors.white,
+                color: AppColors.textPrimary,
               ),
               onPressed: () {
                 player.isPlaying ? player.pause() : player.play();
               },
             ),
             IconButton(
-              icon: const Icon(Icons.skip_next, color: Colors.white),
+              icon: Icon(
+                Icons.skip_next,
+                color: AppColors.textPrimary,
+              ),
               onPressed: player.next,
             ),
           ],
