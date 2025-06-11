@@ -1,1 +1,1 @@
-export 'mini_player.dart';
+export 'mini_player/import.dart';

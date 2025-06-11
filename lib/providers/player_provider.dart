@@ -6,8 +6,10 @@ import 'dart:math';
 class PlayerProvider extends ChangeNotifier {
   final AudioPlayer _audioPlayer = AudioPlayer();
 
-  List<Song> _playlist = []; // Original ordered playlist
-  List<int> _shuffledIndices = []; // Index order for shuffle
+  late final Stream<double> progressStream;
+
+  List<Song> _playlist = [];
+  List<int> _shuffledIndices = [];
   int _currentIndex = 0;
 
   bool _isShuffling = false;
@@ -18,6 +20,13 @@ class PlayerProvider extends ChangeNotifier {
   Duration _totalDuration = Duration.zero;
 
   PlayerProvider() {
+    // Stream for circular progress
+    progressStream = _audioPlayer.positionStream.map((position) {
+      final duration = _audioPlayer.duration ?? Duration.zero;
+      if (duration.inMilliseconds == 0) return 0.0;
+      return position.inMilliseconds / duration.inMilliseconds;
+    }).asBroadcastStream();
+
     _audioPlayer.positionStream.listen((position) {
       _currentPosition = position;
       notifyListeners();
@@ -41,8 +50,8 @@ class PlayerProvider extends ChangeNotifier {
       notifyListeners();
     });
 
-    _audioPlayer.playingStream.listen((playing) {
-      notifyListeners(); // Ensure UI reflects play/pause state
+    _audioPlayer.playingStream.listen((_) {
+      notifyListeners();
     });
   }
 
@@ -58,7 +67,7 @@ class PlayerProvider extends ChangeNotifier {
       _generateShuffledIndices(preserveCurrent: true);
     }
 
-    await _prepareCurrent(); // Prepares audio
+    await _prepareCurrent();
     notifyListeners();
   }
 
@@ -82,11 +91,7 @@ class PlayerProvider extends ChangeNotifier {
   void pause() => _audioPlayer.pause();
 
   void togglePlayPause() {
-    if (isPlaying) {
-      pause();
-    } else {
-      play();
-    }
+    isPlaying ? pause() : play();
     notifyListeners();
   }
 
