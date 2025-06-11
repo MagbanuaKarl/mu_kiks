@@ -6,7 +6,7 @@ import 'providers/import.dart';
 import 'views/import.dart';
 import 'services/import.dart';
 import 'models/import.dart';
-import 'widgets/import.dart';
+import 'widgets/mini_player/import.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
