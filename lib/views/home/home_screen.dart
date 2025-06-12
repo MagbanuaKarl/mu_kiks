@@ -14,56 +14,54 @@ class HomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: AppColors.background,
-        elevation: 0,
-        title: const Text(
-          AppStrings.appName,
-          style: AppTextStyles.headline,
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: songs.isEmpty
+              ? const Center(
+                  child: Text(
+                    AppStrings.noSongsFound,
+                    style: AppTextStyles.body,
+                  ),
+                )
+              : Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const HomeSearchBar(),
+                    const SizedBox(height: 16),
+                    const QuickActionsRow(),
+                    const SizedBox(height: 16),
+                    const PlaybackControlsRow(),
+                    const SizedBox(height: 16),
+                    Expanded(
+                      child: ListView.builder(
+                        itemCount: songs.length,
+                        itemBuilder: (context, index) {
+                          final song = songs[index];
+                          return GestureDetector(
+                            onTap: () async {
+                              final playerProvider =
+                                  context.read<PlayerProvider>();
+                              await playerProvider.setPlaylist(songs,
+                                  startIndex: index);
+
+                              playerProvider.play();
+
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (_) => const NowPlayingScreen()),
+                              );
+                            },
+                            child: SongTile(song: song),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
         ),
-        centerTitle: true,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.playlist_play),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const PlaylistScreen()),
-              );
-            },
-          ),
-        ],
       ),
-      body: songs.isEmpty
-          ? const Center(
-              child: Text(
-                AppStrings.noSongsFound,
-                style: AppTextStyles.body,
-              ),
-            )
-          : ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: songs.length,
-              itemBuilder: (context, index) {
-                final song = songs[index];
-                return GestureDetector(
-                  onTap: () async {
-                    final playerProvider = context.read<PlayerProvider>();
-                    await playerProvider.setPlaylist(songs, startIndex: index);
-
-                    // Explicitly start playback
-                    playerProvider.play();
-
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (_) => const NowPlayingScreen()),
-                    );
-                  },
-                  child: SongTile(song: song),
-                );
-              },
-            ),
     );
   }
 }

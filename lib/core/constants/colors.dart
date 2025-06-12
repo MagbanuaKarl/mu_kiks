@@ -9,4 +9,5 @@ class AppColors {
   static const Color surface = Color(0xFF1C1C1E); // Card/Container
   static const Color success = Color(0xFF4CAF50);
   static const Color error = Color(0xFFF44336);
+  static const Color warning = Color(0xFFFF9800);
 }
