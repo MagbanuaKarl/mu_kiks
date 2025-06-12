@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:mu_kiks/providers/player_provider.dart';
-import 'package:mu_kiks/core/constants/styles.dart';
-import 'package:mu_kiks/core/constants/colors.dart';
+import 'package:mu_kiks/core/import.dart';
 import 'package:mu_kiks/views/import.dart';
 
 class NowPlayingScreen extends StatelessWidget {
@@ -54,20 +53,8 @@ class NowPlayingScreen extends StatelessWidget {
 
                   const SizedBox(height: 30),
 
-                  // Song Title & Artist
-                  Text(
-                    song.title,
-                    style: AppTextStyles.headline,
-                    textAlign: TextAlign.center,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    song.artist,
-                    style: AppTextStyles.body,
-                    textAlign: TextAlign.center,
-                  ),
+                  // Song Title + Favorite + Queue (Refactored into a widget)
+                  NowPlayingHeader(song: song),
 
                   const SizedBox(height: 30),
 
