@@ -19,6 +19,8 @@ class PlayerProvider extends ChangeNotifier {
   Duration _currentPosition = Duration.zero;
   Duration _totalDuration = Duration.zero;
 
+  final Set<String> _favoriteSongIds = {}; // ⭐ Favorites storage
+
   PlayerProvider() {
     // Stream for circular progress
     progressStream = _audioPlayer.positionStream.map((position) {
@@ -69,6 +71,14 @@ class PlayerProvider extends ChangeNotifier {
 
     await _prepareCurrent();
     notifyListeners();
+  }
+
+  Future<void> playFromPlaylist(List<Song> songs, Song selectedSong) async {
+    final index = songs.indexWhere((s) => s.id == selectedSong.id);
+    if (index == -1) return;
+
+    await setPlaylist(songs, startIndex: index);
+    await _playCurrent(); // Ensures audio is prepared before playing
   }
 
   Future<void> _prepareCurrent() async {
@@ -174,6 +184,23 @@ class PlayerProvider extends ChangeNotifier {
     _audioPlayer.setLoopMode(_isLoopingOne ? LoopMode.one : LoopMode.off);
     notifyListeners();
   }
+
+  // ───────────────────────────────────────────────
+  // Favorites Management
+  // ───────────────────────────────────────────────
+
+  void toggleFavorite(Song song) {
+    if (_favoriteSongIds.contains(song.id)) {
+      _favoriteSongIds.remove(song.id);
+    } else {
+      _favoriteSongIds.add(song.id);
+    }
+    notifyListeners();
+  }
+
+  bool isFavorite(Song song) => _favoriteSongIds.contains(song.id);
+
+  Set<String> get favoriteSongIds => _favoriteSongIds;
 
   // ───────────────────────────────────────────────
   // Getters for UI
