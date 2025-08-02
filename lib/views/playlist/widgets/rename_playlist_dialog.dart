@@ -18,7 +18,7 @@ Future<void> showRenamePlaylistDialog({
       return StatefulBuilder(
         builder: (context, setState) => AlertDialog(
           backgroundColor: AppColors.background,
-          title: Text('Rename Playlist', style: AppTextStyles.headline),
+          title: const Text('Rename Playlist', style: AppTextStyles.headline),
           content: TextField(
             controller: controller,
             autofocus: true,
@@ -43,7 +43,7 @@ Future<void> showRenamePlaylistDialog({
               onPressed: () => Navigator.pop(context),
             ),
             TextButton(
-              child: Text('Rename', style: AppTextStyles.button),
+              child: const Text('Rename', style: AppTextStyles.button),
               onPressed: () {
                 final newName = controller.text.trim();
                 if (newName.isEmpty) {

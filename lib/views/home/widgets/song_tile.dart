@@ -27,7 +27,7 @@ class SongTile extends StatelessWidget {
         ),
         child: Row(
           children: [
-            Icon(Icons.music_note, color: AppColors.accent),
+            const Icon(Icons.music_note, color: AppColors.accent),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
@@ -60,7 +60,8 @@ class SongTile extends StatelessWidget {
                   builder: (_) => _buildOptionsSheet(context),
                 );
               },
-              child: Icon(Icons.more_vert, color: AppColors.textSecondary),
+              child:
+                  const Icon(Icons.more_vert, color: AppColors.textSecondary),
             ),
           ],
         ),

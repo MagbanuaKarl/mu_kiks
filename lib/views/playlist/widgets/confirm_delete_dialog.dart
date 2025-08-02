@@ -10,7 +10,7 @@ Future<void> showConfirmDeleteDialog({
     context: context,
     builder: (context) => AlertDialog(
       backgroundColor: AppColors.background,
-      title: Text('Delete Playlist', style: AppTextStyles.headline),
+      title: const Text('Delete Playlist', style: AppTextStyles.headline),
       content: Text(
         'Are you sure you want to delete "$playlistName"? This action cannot be undone.',
         style: AppTextStyles.body.copyWith(color: AppColors.textSecondary),
