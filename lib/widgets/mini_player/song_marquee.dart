@@ -12,15 +12,13 @@ class SongMarquee extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Expanded(
-      child: SizedBox(
-        height: 20,
-        child: MarqueeText(
-          text: title,
-          style: AppTextStyles.subhead.copyWith(
-            fontWeight: FontWeight.bold,
-            color: AppColors.textPrimary,
-          ),
+    return SizedBox(
+      height: 20,
+      child: MarqueeText(
+        text: title,
+        style: AppTextStyles.subhead.copyWith(
+          fontWeight: FontWeight.bold,
+          color: AppColors.textPrimary,
         ),
       ),
     );
