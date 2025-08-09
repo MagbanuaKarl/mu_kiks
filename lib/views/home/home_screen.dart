@@ -33,8 +33,7 @@ class _HomeScreenState extends State<HomeScreen> {
     setState(() {
       filteredSongs = widget.songs.where((song) {
         final titleMatch = song.title.toLowerCase().contains(lowerQuery);
-        final artistMatch =
-            song.artist?.toLowerCase().contains(lowerQuery) ?? false;
+        final artistMatch = (song.artist).toLowerCase().contains(lowerQuery);
         return titleMatch || artistMatch;
       }).toList();
     });
