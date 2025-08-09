@@ -57,8 +57,20 @@ class _HomeInitializerState extends State<HomeInitializer> {
   @override
   void initState() {
     super.initState();
-    // ✅ Delay loading until after widget tree has built
-    WidgetsBinding.instance.addPostFrameCallback((_) => _loadSongs());
+    WidgetsBinding.instance.addPostFrameCallback((_) => _checkFirstLaunch());
+  }
+
+  Future<void> _checkFirstLaunch() async {
+    final isFirst = await AppPreferences.isFirstLaunch();
+    if (isFirst) {
+      await _loadSongs();
+      await AppPreferences.setFirstLaunchDone();
+    } else {
+      // Not first launch → skip auto scan
+      await Provider.of<PlaylistProvider>(context, listen: false)
+          .loadPlaylists();
+      setState(() => _loading = false);
+    }
   }
 
   Future<void> _loadSongs() async {
@@ -73,7 +85,6 @@ class _HomeInitializerState extends State<HomeInitializer> {
       });
     } catch (e, stack) {
       debugPrint('❌ Failed to load songs: $e\n$stack');
-      // You can also show an error dialog or fallback screen
     }
   }
 
@@ -88,9 +99,11 @@ class _HomeInitializerState extends State<HomeInitializer> {
       );
     }
 
-    // ✅ More robust layout using Scaffold
     return Scaffold(
-      body: HomeScreen(songs: _songs),
+      body: HomeScreen(
+        songs: _songs,
+        onScanRequested: _loadSongs, // ✅ pass scan trigger to HomeScreen
+      ),
       bottomNavigationBar: const MiniPlayer(),
     );
   }
