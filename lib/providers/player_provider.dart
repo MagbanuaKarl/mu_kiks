@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:audio_service/audio_service.dart';
-import 'package:rxdart/rxdart.dart';
+// import 'package:rxdart/rxdart.dart';
 import 'package:mu_kiks/models/import.dart';
 import 'package:mu_kiks/services/audio_player_handler.dart';
 
@@ -62,7 +62,7 @@ class PlayerProvider extends ChangeNotifier {
     _positionSubscription =
         Stream.periodic(const Duration(milliseconds: 200)).listen((_) async {
       if (_audioHandler is AudioPlayerHandler) {
-        final handler = _audioHandler as AudioPlayerHandler;
+        final handler = _audioHandler;
         final position = await handler.getCurrentPosition();
         if (position != _currentPosition) {
           _currentPosition = position;
@@ -93,7 +93,7 @@ class PlayerProvider extends ChangeNotifier {
 
     // Update duration after setting playlist
     if (_playlist.isNotEmpty && startIndex < _playlist.length) {
-      _totalDuration = _playlist[startIndex].duration ?? Duration.zero;
+      _totalDuration = _playlist[_currentIndex].duration;
       notifyListeners();
     }
   }
@@ -158,7 +158,7 @@ class PlayerProvider extends ChangeNotifier {
 
   void _updateCurrentSongInfo() {
     if (_playlist.isNotEmpty && _currentIndex < _playlist.length) {
-      _totalDuration = _playlist[_currentIndex].duration ?? Duration.zero;
+      _totalDuration = _playlist[_currentIndex].duration;
       _currentPosition = Duration.zero;
       notifyListeners();
     }
