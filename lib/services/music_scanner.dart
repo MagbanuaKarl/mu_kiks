@@ -45,6 +45,29 @@ class MusicScanner {
     return songList;
   }
 
+  static Future<List<Song>> quickScan() async {
+    List<Song> songList = [];
+
+    final muKiksDir = await FileUtils.getMuKiksMusicDirectory();
+    final muKiksMp3s = await FileUtils.scanMp3Files(muKiksDir);
+
+    for (var file in muKiksMp3s) {
+      final duration = await _getDurationPlaceholder(file);
+      final name = p.basenameWithoutExtension(file.path);
+
+      songList.add(Song(
+        id: const Uuid().v4(),
+        title: name,
+        artist: 'Unknown Artist',
+        album: 'Unknown Album',
+        path: file.path,
+        duration: duration,
+      ));
+    }
+
+    return songList;
+  }
+
   /// Scans for MP3 files with error handling for restricted directories
   static Future<List<File>> _scanMp3FilesWithErrorHandling(
       Directory directory) async {

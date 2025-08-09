@@ -63,13 +63,18 @@ class _HomeInitializerState extends State<HomeInitializer> {
   Future<void> _checkFirstLaunch() async {
     final isFirst = await AppPreferences.isFirstLaunch();
     if (isFirst) {
-      await _loadSongs();
+      await _loadSongs(); // full scan
       await AppPreferences.setFirstLaunchDone();
     } else {
-      // Not first launch → skip auto scan
+      // Not first launch → quick scan MuKiks folder
+      final songs = await MusicScanner.quickScan();
+      setState(() {
+        _songs = songs;
+        _loading = false;
+      });
+
       await Provider.of<PlaylistProvider>(context, listen: false)
           .loadPlaylists();
-      setState(() => _loading = false);
     }
   }
 

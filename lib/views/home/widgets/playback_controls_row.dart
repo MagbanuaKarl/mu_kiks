@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mu_kiks/core/import.dart';
+import 'package:provider/provider.dart';
+import 'package:mu_kiks/providers/player_provider.dart';
 
 class PlaybackControlsRow extends StatelessWidget {
   const PlaybackControlsRow({super.key});
@@ -39,24 +41,31 @@ class PlaybackControlsRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final playerProvider = context.watch<PlayerProvider>();
+
     return Row(
       children: [
         GestureDetector(
           onTap: () {
-            debugPrint('Shuffle playback tapped');
+            playerProvider.toggleShuffle();
           },
           child: Container(
-            width: 187, // Optional: Set a fixed width or use constraints
+            width: 187,
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
             decoration: BoxDecoration(
-              color: AppColors.primary,
+              color: playerProvider.isShuffling
+                  ? Colors.green // highlight when active
+                  : AppColors.primary,
               borderRadius: BorderRadius.circular(30),
             ),
             child: const Row(
               mainAxisAlignment: MainAxisAlignment.start,
               mainAxisSize: MainAxisSize.max,
               children: [
-                Icon(Icons.shuffle, color: AppColors.textPrimary),
+                Icon(
+                  Icons.shuffle,
+                  color: AppColors.textPrimary,
+                ),
                 SizedBox(width: 8),
                 Text(
                   'Shuffle playback',
