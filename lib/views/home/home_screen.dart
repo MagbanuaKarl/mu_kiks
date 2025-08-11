@@ -7,12 +7,12 @@ import 'package:mu_kiks/providers/import.dart';
 
 class HomeScreen extends StatefulWidget {
   final List<Song> songs;
-  final VoidCallback? onScanRequested; // ✅ Added
+  final Future<void> Function()? onScanRequested; // ✅ Changed to async-friendly
 
   const HomeScreen({
     super.key,
     required this.songs,
-    this.onScanRequested, // ✅ Added
+    this.onScanRequested,
   });
 
   @override
@@ -33,9 +33,23 @@ class _HomeScreenState extends State<HomeScreen> {
     setState(() {
       filteredSongs = widget.songs.where((song) {
         final titleMatch = song.title.toLowerCase().contains(lowerQuery);
-        final artistMatch = (song.artist).toLowerCase().contains(lowerQuery);
+        final artistMatch = song.artist.toLowerCase().contains(lowerQuery);
         return titleMatch || artistMatch;
       }).toList();
+    });
+  }
+
+  void _sortSongs(String sortType) {
+    setState(() {
+      if (sortType == "time") {
+        filteredSongs.sort((a, b) => b.dateAdded.compareTo(a.dateAdded));
+      } else if (sortType == "name") {
+        filteredSongs.sort(
+          (a, b) => a.title.toLowerCase().compareTo(b.title.toLowerCase()),
+        );
+      } else if (sortType == "timesPlayed") {
+        filteredSongs.sort((a, b) => b.playCount.compareTo(a.playCount));
+      }
     });
   }
 
@@ -51,12 +65,14 @@ class _HomeScreenState extends State<HomeScreen> {
             children: [
               HomeSearchBar(
                 onSearch: _filterSongs,
-                onScanRequested: widget.onScanRequested, // ✅ Pass down
+                onScanRequested: widget.onScanRequested,
               ),
               const SizedBox(height: 16),
-              const QuickActionsRow(),
+              QuickActionsRow(),
               const SizedBox(height: 16),
-              const PlaybackControlsRow(),
+              PlaybackControlsRow(
+                onSortSelected: _sortSongs,
+              ),
               const SizedBox(height: 16),
               Expanded(
                 child: filteredSongs.isEmpty
@@ -66,29 +82,39 @@ class _HomeScreenState extends State<HomeScreen> {
                           style: AppTextStyles.body,
                         ),
                       )
-                    : ListView.builder(
-                        itemCount: filteredSongs.length,
-                        itemBuilder: (context, index) {
-                          final song = filteredSongs[index];
-                          return GestureDetector(
-                            onTap: () async {
-                              final playerProvider =
-                                  context.read<PlayerProvider>();
-                              await playerProvider.setPlaylist(
-                                filteredSongs,
-                                startIndex: index,
-                              );
-                              playerProvider.play();
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => const NowPlayingScreen(),
-                                ),
-                              );
-                            },
-                            child: SongTile(song: song),
-                          );
+                    : RefreshIndicator(
+                        color: Colors.white,
+                        backgroundColor: Colors.grey[900],
+                        onRefresh: () async {
+                          if (widget.onScanRequested != null) {
+                            await widget.onScanRequested!();
+                          }
                         },
+                        child: ListView.builder(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          itemCount: filteredSongs.length,
+                          itemBuilder: (context, index) {
+                            final song = filteredSongs[index];
+                            return GestureDetector(
+                              onTap: () async {
+                                final playerProvider =
+                                    context.read<PlayerProvider>();
+                                await playerProvider.setPlaylist(
+                                  filteredSongs,
+                                  startIndex: index,
+                                );
+                                playerProvider.play();
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => const NowPlayingScreen(),
+                                  ),
+                                );
+                              },
+                              child: SongTile(song: song),
+                            );
+                          },
+                        ),
                       ),
               ),
             ],

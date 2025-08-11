@@ -4,6 +4,7 @@ import 'package:audio_service/audio_service.dart';
 
 import 'config/theme.dart';
 import 'providers/import.dart';
+import 'providers/song_provider.dart'; // ✅ Add this import
 import 'views/import.dart';
 import 'services/import.dart';
 import 'models/import.dart';
@@ -13,7 +14,9 @@ late final AudioHandler _audioHandler;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
   _audioHandler = await initAudioService();
+
   runApp(MuKiksApp(audioHandler: _audioHandler));
 }
 
@@ -31,6 +34,9 @@ class MuKiksApp extends StatelessWidget {
         ),
         ChangeNotifierProvider(
           create: (_) => PlaylistProvider(),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => SongProvider(), // ✅ Provide SongProvider globally
         ),
       ],
       child: MaterialApp(
@@ -51,8 +57,8 @@ class HomeInitializer extends StatefulWidget {
 }
 
 class _HomeInitializerState extends State<HomeInitializer> {
-  List<Song> _songs = [];
   bool _loading = true;
+  String? _errorMessage;
 
   @override
   void initState() {
@@ -61,41 +67,39 @@ class _HomeInitializerState extends State<HomeInitializer> {
   }
 
   Future<void> _checkFirstLaunch() async {
-    final isFirst = await AppPreferences.isFirstLaunch();
-    if (isFirst) {
-      await _loadSongs(); // full scan
-      await AppPreferences.setFirstLaunchDone();
-    } else {
-      // Not first launch → quick scan MuKiks folder
-      final songs = await MusicScanner.quickScan();
-      setState(() {
-        _songs = songs;
-        _loading = false;
-      });
+    final songProvider = context.read<SongProvider>();
 
-      await Provider.of<PlaylistProvider>(context, listen: false)
-          .loadPlaylists();
-    }
-  }
-
-  Future<void> _loadSongs() async {
     try {
-      final songs = await MusicScanner.scanAndImportSongs();
-      await Provider.of<PlaylistProvider>(context, listen: false)
-          .loadPlaylists();
+      final isFirst = await AppPreferences.isFirstLaunch();
+
+      if (isFirst) {
+        await songProvider.scanSongs(); // ✅ Use provider instead of _loadSongs
+        await AppPreferences.setFirstLaunchDone();
+      } else {
+        await songProvider
+            .quickScanSongs(); // ✅ Add quick scan method in provider
+      }
+
+      await context.read<PlaylistProvider>().loadPlaylists();
 
       setState(() {
-        _songs = songs;
         _loading = false;
+        _errorMessage = null;
       });
     } catch (e, stack) {
-      debugPrint('❌ Failed to load songs: $e\n$stack');
+      debugPrint('❌ Error during initialization: $e\n$stack');
+      setState(() {
+        _errorMessage = 'Failed to initialize MuKiks.';
+        _loading = false;
+      });
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_loading) {
+    final songProvider = context.watch<SongProvider>();
+
+    if (_loading || songProvider.isScanning) {
       return const Scaffold(
         backgroundColor: Colors.black,
         body: Center(
@@ -104,10 +108,22 @@ class _HomeInitializerState extends State<HomeInitializer> {
       );
     }
 
+    if (_errorMessage != null) {
+      return Scaffold(
+        backgroundColor: Colors.black,
+        body: Center(
+          child: Text(
+            _errorMessage!,
+            style: const TextStyle(color: Colors.redAccent),
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       body: HomeScreen(
-        songs: _songs,
-        onScanRequested: _loadSongs, // ✅ pass scan trigger to HomeScreen
+        songs: songProvider.songs,
+        onScanRequested: () => songProvider.scanSongs(), // ✅ Trigger full scan
       ),
       bottomNavigationBar: const MiniPlayer(),
     );
