@@ -48,7 +48,7 @@ class PlaylistSongTile extends StatelessWidget {
                 ),
               )
             else
-              Icon(Icons.music_note, color: AppColors.accent),
+              const Icon(Icons.music_note, color: AppColors.accent),
             if (number != null)
               Container(
                 margin: const EdgeInsets.symmetric(horizontal: 12),

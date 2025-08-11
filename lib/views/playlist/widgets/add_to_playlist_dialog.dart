@@ -96,7 +96,7 @@ class _AddToPlaylistDialogState extends State<AddToPlaylistDialog> {
         ),
         if (widget.isCreatingNew)
           TextButton(
-            child: Text('Create', style: AppTextStyles.button),
+            child: const Text('Create', style: AppTextStyles.button),
             onPressed: () {
               final name = _controller.text.trim();
               if (name.isEmpty) {

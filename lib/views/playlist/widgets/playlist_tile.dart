@@ -28,7 +28,7 @@ class PlaylistTile extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
       ),
       tileColor: AppColors.surface,
-      leading: Icon(Icons.playlist_play, color: AppColors.accent),
+      leading: const Icon(Icons.playlist_play, color: AppColors.accent),
       title: Text(
         playlist.name,
         style: AppTextStyles.subhead,

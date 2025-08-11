@@ -9,8 +9,6 @@ class PermissionUtils {
     final androidInfo = await DeviceInfoPlugin().androidInfo;
     final sdkInt = androidInfo.version.sdkInt;
 
-    print('Android SDK Version: $sdkInt');
-
     if (sdkInt >= 33) {
       // Android 13+ (Tiramisu+): Use audio permission
       final audioStatus = await Permission.audio.request();

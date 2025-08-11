@@ -1,8 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:mu_kiks/core/import.dart';
+import 'package:provider/provider.dart';
+import 'package:mu_kiks/providers/player_provider.dart';
 
 class PlaybackControlsRow extends StatelessWidget {
-  const PlaybackControlsRow({super.key});
+  final void Function(String sortType) onSortSelected; // NEW
+
+  const PlaybackControlsRow({
+    super.key,
+    required this.onSortSelected,
+  });
 
   void _showSortOptions(BuildContext context) {
     showModalBottomSheet(
@@ -18,19 +25,28 @@ class PlaybackControlsRow extends StatelessWidget {
             leading:
                 const Icon(Icons.access_time, color: AppColors.textPrimary),
             title: const Text('Sort by Time', style: AppTextStyles.body),
-            onTap: () => Navigator.pop(context),
+            onTap: () {
+              Navigator.pop(context);
+              onSortSelected("time"); // ✅ trigger sorting
+            },
           ),
           ListTile(
             leading:
                 const Icon(Icons.sort_by_alpha, color: AppColors.textPrimary),
             title: const Text('Sort by Name', style: AppTextStyles.body),
-            onTap: () => Navigator.pop(context),
+            onTap: () {
+              Navigator.pop(context);
+              onSortSelected("name");
+            },
           ),
           ListTile(
             leading: const Icon(Icons.bar_chart, color: AppColors.textPrimary),
             title:
                 const Text('Sort by Times Played', style: AppTextStyles.body),
-            onTap: () => Navigator.pop(context),
+            onTap: () {
+              Navigator.pop(context);
+              onSortSelected("timesPlayed");
+            },
           ),
         ],
       ),
@@ -39,22 +55,23 @@ class PlaybackControlsRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final playerProvider = context.watch<PlayerProvider>();
+
     return Row(
       children: [
         GestureDetector(
           onTap: () {
-            debugPrint('Shuffle playback tapped');
+            playerProvider.toggleShuffle();
           },
           child: Container(
-            width: 187, // Optional: Set a fixed width or use constraints
+            width: 187,
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
             decoration: BoxDecoration(
-              color: AppColors.primary,
+              color:
+                  playerProvider.isShuffling ? Colors.green : AppColors.primary,
               borderRadius: BorderRadius.circular(30),
             ),
             child: const Row(
-              mainAxisAlignment: MainAxisAlignment.start,
-              mainAxisSize: MainAxisSize.max,
               children: [
                 Icon(Icons.shuffle, color: AppColors.textPrimary),
                 SizedBox(width: 8),

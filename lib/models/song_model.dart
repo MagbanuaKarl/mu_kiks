@@ -9,6 +9,10 @@ class Song extends Equatable {
   final Duration duration;
   final String? artworkPath; // Optional local cover art
 
+  // ✅ New fields
+  final DateTime dateAdded; // For sorting by time added
+  final int playCount; // For sorting by most played
+
   const Song({
     required this.id,
     required this.title,
@@ -17,6 +21,8 @@ class Song extends Equatable {
     required this.path,
     required this.duration,
     this.artworkPath,
+    required this.dateAdded,
+    this.playCount = 0, // default
   });
 
   // Factory to create a Song from a Map (for DB or JSON)
@@ -29,6 +35,8 @@ class Song extends Equatable {
       path: map['path'],
       duration: Duration(milliseconds: map['duration']),
       artworkPath: map['artworkPath'],
+      dateAdded: DateTime.tryParse(map['dateAdded'] ?? '') ?? DateTime.now(),
+      playCount: map['playCount'] ?? 0,
     );
   }
 
@@ -42,10 +50,46 @@ class Song extends Equatable {
       'path': path,
       'duration': duration.inMilliseconds,
       'artworkPath': artworkPath,
+      'dateAdded': dateAdded.toIso8601String(),
+      'playCount': playCount,
     };
   }
 
+  // Optional copyWith for immutability
+  Song copyWith({
+    String? id,
+    String? title,
+    String? artist,
+    String? album,
+    String? path,
+    Duration? duration,
+    String? artworkPath,
+    DateTime? dateAdded,
+    int? playCount,
+  }) {
+    return Song(
+      id: id ?? this.id,
+      title: title ?? this.title,
+      artist: artist ?? this.artist,
+      album: album ?? this.album,
+      path: path ?? this.path,
+      duration: duration ?? this.duration,
+      artworkPath: artworkPath ?? this.artworkPath,
+      dateAdded: dateAdded ?? this.dateAdded,
+      playCount: playCount ?? this.playCount,
+    );
+  }
+
   @override
-  List<Object?> get props =>
-      [id, title, artist, album, path, duration, artworkPath];
+  List<Object?> get props => [
+        id,
+        title,
+        artist,
+        album,
+        path,
+        duration,
+        artworkPath,
+        dateAdded,
+        playCount,
+      ];
 }

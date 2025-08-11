@@ -2,7 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:mu_kiks/core/import.dart';
 
 class HomeSearchBar extends StatelessWidget {
-  const HomeSearchBar({super.key});
+  final ValueChanged<String> onSearch;
+  final VoidCallback? onScanRequested;
+
+  const HomeSearchBar({
+    super.key,
+    required this.onSearch,
+    this.onScanRequested,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -13,6 +20,12 @@ class HomeSearchBar extends StatelessWidget {
         filled: true,
         fillColor: Colors.grey[900],
         prefixIcon: const Icon(Icons.search, color: Colors.white70),
+        suffixIcon: onScanRequested != null
+            ? IconButton(
+                icon: const Icon(Icons.qr_code_scanner, color: Colors.white70),
+                onPressed: onScanRequested,
+              )
+            : null,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(30),
           borderSide: BorderSide.none,
@@ -20,10 +33,7 @@ class HomeSearchBar extends StatelessWidget {
         contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 0),
       ),
       style: AppTextStyles.body.copyWith(color: Colors.white),
-      onChanged: (value) {
-        // TODO: Implement actual search logic
-        debugPrint('Search: $value');
-      },
+      onChanged: onSearch,
     );
   }
 }
