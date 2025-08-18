@@ -20,6 +20,10 @@ dependencies:
   equatable: ^2.0.5
   cupertino_icons: ^1.0.8
   uuid: ^4.0.0
+  device_info_plus: ^10.1.0
+  audio_session: ^0.1.15
+  rxdart: ^0.27.7
+  shared_preferences: ^2.2.2
 
 dev_dependencies:
   flutter_test:
@@ -37,4 +41,4 @@ flutter_launcher_icons:
   android: true
   image_path: "assets/icons/appIcon.png"
   adaptive_icon_background: "#333333"
-  adaptive_icon_foreground: "assets/icons/appIcon.png"  # Fixed: Should match your actual file location
+  adaptive_icon_foreground: "assets/icons/appIcon.png"

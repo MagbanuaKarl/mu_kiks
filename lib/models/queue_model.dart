@@ -4,19 +4,19 @@ class SongQueue {
   final List<Song> songs;
   final int currentIndex;
 
-  SongQueue({
+  const SongQueue({
     required this.songs,
     required this.currentIndex,
   });
 
   // ──────────────────────────────────────────────────────
-  // JSON Serialization (optional but useful)
+  // JSON Serialization (for persistence, optional)
   // ──────────────────────────────────────────────────────
 
   factory SongQueue.fromJson(Map<String, dynamic> json) {
     return SongQueue(
       songs: (json['songs'] as List<dynamic>)
-          .map((item) => Song.fromMap(item)) // Changed from fromJson to fromMap
+          .map((item) => Song.fromMap(item))
           .toList(),
       currentIndex: json['currentIndex'],
     );
@@ -24,14 +24,13 @@ class SongQueue {
 
   Map<String, dynamic> toJson() {
     return {
-      'songs':
-          songs.map((s) => s.toMap()).toList(), // Changed from toJson to toMap
+      'songs': songs.map((s) => s.toMap()).toList(),
       'currentIndex': currentIndex,
     };
   }
 
   // ──────────────────────────────────────────────────────
-  // Utilities for updating queue state
+  // Utilities
   // ──────────────────────────────────────────────────────
 
   SongQueue copyWith({
