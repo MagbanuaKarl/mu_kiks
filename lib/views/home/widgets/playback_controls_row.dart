@@ -1,14 +1,18 @@
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:mu_kiks/core/import.dart';
 import 'package:provider/provider.dart';
+import 'package:mu_kiks/models/import.dart';
 import 'package:mu_kiks/providers/player_provider.dart';
 
 class PlaybackControlsRow extends StatelessWidget {
-  final void Function(String sortType) onSortSelected; // NEW
+  final void Function(String sortType) onSortSelected;
+  final List<Song> allSongs;
 
   const PlaybackControlsRow({
     super.key,
     required this.onSortSelected,
+    required this.allSongs,
   });
 
   void _showSortOptions(BuildContext context) {
@@ -27,7 +31,7 @@ class PlaybackControlsRow extends StatelessWidget {
             title: const Text('Sort by Time', style: AppTextStyles.body),
             onTap: () {
               Navigator.pop(context);
-              onSortSelected("time"); // ✅ trigger sorting
+              onSortSelected("time");
             },
           ),
           ListTile(
@@ -60,8 +64,17 @@ class PlaybackControlsRow extends StatelessWidget {
     return Row(
       children: [
         GestureDetector(
-          onTap: () {
-            playerProvider.toggleShuffle();
+          onTap: () async {
+            final player = context.read<PlayerProvider>();
+
+            // Toggle shuffle mode first
+            await player.toggleShuffle();
+
+            // If nothing is playing, start playback from a random song
+            if (player.currentSong == null && allSongs.isNotEmpty) {
+              final randomIndex = Random().nextInt(allSongs.length);
+              await player.playFromPlaylist(allSongs, startIndex: randomIndex);
+            }
           },
           child: Container(
             width: 187,

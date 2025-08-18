@@ -1,209 +1,169 @@
+// lib/providers/player_provider.dart
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:audio_service/audio_service.dart';
-// import 'package:rxdart/rxdart.dart';
 import 'package:mu_kiks/models/import.dart';
 import 'package:mu_kiks/services/audio_player_handler.dart';
 
 class PlayerProvider extends ChangeNotifier {
-  final AudioHandler _audioHandler;
-  StreamSubscription? _positionSubscription;
-
-  PlayerProvider(this._audioHandler) {
-    _init();
-  }
+  final AudioHandler _handler;
+  final _favoriteSongIds = <String>{};
 
   List<Song> _playlist = [];
-  List<int> _shuffledIndices = [];
-  int _currentIndex = 0;
 
-  bool _isShuffling = false;
-  bool _isLooping = false;
-  bool _isLoopingOne = false;
+  StreamSubscription<PlaybackState>? _playbackSub;
+  StreamSubscription<MediaItem?>? _mediaItemSub;
+  StreamSubscription<Duration>? _positionSub;
+  StreamSubscription<Duration?>? _durationSub;
 
+  Song? _currentSong;
+  bool _isPlaying = false;
   Duration _currentPosition = Duration.zero;
   Duration _totalDuration = Duration.zero;
 
-  final Set<String> _favoriteSongIds = {};
-
-  void _init() {
-    // Listen to playback state changes
-    _audioHandler.playbackState.listen((state) {
-      // In v0.18, position is not available in PlaybackState, so we'll get it directly
-      notifyListeners();
-    });
-
-    // Listen to media item changes for duration updates
-    _audioHandler.mediaItem.listen((mediaItem) {
-      if (mediaItem != null) {
-        final index =
-            _playlist.indexWhere((s) => s.id == mediaItem.extras?['id']);
-        if (index != -1) _currentIndex = index;
-
-        _totalDuration = mediaItem.duration ?? Duration.zero;
-        notifyListeners();
-      }
-    });
-
-    // Listen to queue changes
-    _audioHandler.queue.listen((queue) {
-      notifyListeners();
-    });
-
-    // Add position stream listener for real-time updates
-    _startPositionListener();
+  PlayerProvider(this._handler) {
+    _listenToHandler();
   }
 
-  void _startPositionListener() {
-    // Cancel existing subscription if any
-    _positionSubscription?.cancel();
+  // --- Public getters ---
+  Song? get currentSong => _currentSong;
+  bool get isPlaying => _isPlaying;
+  List<Song> get playlist => _playlist;
 
-    // Create a periodic stream to update position
-    _positionSubscription =
-        Stream.periodic(const Duration(milliseconds: 200)).listen((_) async {
-      if (_audioHandler is AudioPlayerHandler) {
-        final handler = _audioHandler;
-        final position = await handler.getCurrentPosition();
-        if (position != _currentPosition) {
-          _currentPosition = position;
-          notifyListeners();
-        }
-      }
-    });
+  bool get isShuffling =>
+      _handler.playbackState.value.shuffleMode == AudioServiceShuffleMode.all;
+  bool get isLoopingOne =>
+      _handler.playbackState.value.repeatMode == AudioServiceRepeatMode.one;
+  bool get isLooping =>
+      _handler.playbackState.value.repeatMode == AudioServiceRepeatMode.all;
+
+  Set<String> get favoriteSongIds => _favoriteSongIds;
+  Duration get currentPosition => _currentPosition;
+  Duration get totalDuration => _totalDuration;
+
+  double get progress {
+    if (_totalDuration.inMilliseconds == 0) return 0.0;
+    return _currentPosition.inMilliseconds / _totalDuration.inMilliseconds;
   }
 
-  @override
-  void dispose() {
-    _positionSubscription?.cancel();
-    super.dispose();
+  // --- Core playback controls ---
+  Future<void> play() => _handler.play();
+  Future<void> pause() => _handler.pause();
+
+  Future<void> skipNext() async {
+    if (_playlist.isEmpty) return;
+
+    final currentIndex = _currentSong != null
+        ? _playlist.indexWhere((s) => s.id == _currentSong!.id)
+        : -1;
+    if (currentIndex == -1) return;
+
+    int nextIndex = (currentIndex + 1) % _playlist.length; // wrap-around
+
+    await playFromPlaylist(_playlist, startIndex: nextIndex);
   }
 
-  // ───────── Playbook Controls ─────────
+  Future<void> skipPrevious() async {
+    if (_playlist.isEmpty) return;
 
+    final currentIndex = _currentSong != null
+        ? _playlist.indexWhere((s) => s.id == _currentSong!.id)
+        : -1;
+    if (currentIndex == -1) return;
+
+    int prevIndex = currentIndex - 1;
+    if (prevIndex < 0) prevIndex = _playlist.length - 1; // wrap-around
+
+    await playFromPlaylist(_playlist, startIndex: prevIndex);
+  }
+
+  Future<void> seek(Duration position) => _handler.seek(position);
+
+  void togglePlayPause() {
+    isPlaying ? pause() : play();
+  }
+
+  // --- Playlist management ---
   Future<void> setPlaylist(List<Song> songs, {int startIndex = 0}) async {
     _playlist = songs;
-    _currentIndex = startIndex;
 
-    if (_isShuffling) _generateShuffledIndices(preserveCurrent: true);
+    if (_handler is AudioPlayerHandler) {
+      final playerHandler = _handler as AudioPlayerHandler;
+      await playerHandler.setPlaylist(songs);
 
-    await (_audioHandler as AudioPlayerHandler).setPlaylist(
-      _playlist,
-      startIndex: _currentIndex,
-    );
+      if (startIndex >= 0 && startIndex < songs.length) {
+        await playerHandler.skipToQueueItem(startIndex);
+      }
 
-    // Update duration after setting playlist
-    if (_playlist.isNotEmpty && startIndex < _playlist.length) {
-      _totalDuration = _playlist[_currentIndex].duration;
-      notifyListeners();
+      _positionSub?.cancel();
+      _durationSub?.cancel();
+
+      _positionSub = playerHandler.player.positionStream.listen((pos) {
+        _currentPosition = pos;
+        notifyListeners();
+      });
+
+      _durationSub = playerHandler.player.durationStream.listen((dur) {
+        _totalDuration = dur ?? Duration.zero;
+        notifyListeners();
+      });
+    } else {
+      await _handler.customAction('setPlaylist', {
+        'songs': songs.map((s) => s.toJson()).toList(),
+      });
+      if (startIndex >= 0 && startIndex < songs.length) {
+        await _handler.skipToQueueItem(startIndex);
+      }
+      _totalDuration = songs[startIndex].duration;
     }
+
+    _updateCurrentSong();
+    notifyListeners();
   }
 
-  Future<void> playFromPlaylist(List<Song> songs, Song selectedSong) async {
-    final index = songs.indexWhere((s) => s.id == selectedSong.id);
-    if (index == -1) return;
+  Future<void> playFromPlaylist(
+    List<Song> songs, {
+    Song? startSong,
+    int startIndex = 0,
+  }) async {
+    if (startSong != null) {
+      startIndex = songs.indexWhere((s) => s.id == startSong.id);
+      if (startIndex == -1) startIndex = 0;
+    }
 
-    await setPlaylist(songs, startIndex: index);
+    await setPlaylist(songs, startIndex: startIndex);
     await play();
   }
 
-  Future<void> play() => _audioHandler.play();
-  Future<void> pause() => _audioHandler.pause();
+  // --- Shuffle / Repeat ---
+  Future<void> toggleShuffle() async {
+    final state = _handler.playbackState.value;
+    final newMode = state.shuffleMode == AudioServiceShuffleMode.all
+        ? AudioServiceShuffleMode.none
+        : AudioServiceShuffleMode.all;
 
-  Future<void> seek(Duration position) async {
-    await _audioHandler.seek(position);
-    _currentPosition = position;
-    notifyListeners();
-  }
-
-  Future<void> stop() => _audioHandler.stop();
-
-  void togglePlayPause() async {
-    isPlaying ? await pause() : await play();
-    notifyListeners();
-  }
-
-  void next() {
-    if (_playlist.isEmpty) return;
-
-    if (_isShuffling && _shuffledIndices.isNotEmpty) {
-      int currentShufflePos = _shuffledIndices.indexOf(_currentIndex);
-      int nextShufflePos = (currentShufflePos + 1) % _shuffledIndices.length;
-      _currentIndex = _shuffledIndices[nextShufflePos];
-    } else {
-      _currentIndex = (_currentIndex + 1) % _playlist.length;
-    }
-
-    _audioHandler.skipToQueueItem(_currentIndex);
-    _updateCurrentSongInfo();
-  }
-
-  void previous() {
-    if (_currentPosition > const Duration(seconds: 3)) {
-      seek(Duration.zero);
-    } else {
-      if (_isShuffling && _shuffledIndices.isNotEmpty) {
-        int currentShufflePos = _shuffledIndices.indexOf(_currentIndex);
-        int prevShufflePos = (currentShufflePos - 1 + _shuffledIndices.length) %
-            _shuffledIndices.length;
-        _currentIndex = _shuffledIndices[prevShufflePos];
-      } else {
-        _currentIndex =
-            (_currentIndex - 1 + _playlist.length) % _playlist.length;
-      }
-
-      _audioHandler.skipToQueueItem(_currentIndex);
-      _updateCurrentSongInfo();
-    }
-  }
-
-  void _updateCurrentSongInfo() {
-    if (_playlist.isNotEmpty && _currentIndex < _playlist.length) {
-      _totalDuration = _playlist[_currentIndex].duration;
-      _currentPosition = Duration.zero;
+    if (_handler is AudioPlayerHandler) {
+      await (_handler as AudioPlayerHandler).setShuffleMode(newMode);
       notifyListeners();
     }
   }
 
-  // ───────── Shuffle & Loop ─────────
+  Future<void> toggleLoop() async {
+    final current = _handler.playbackState.value.repeatMode;
+    final newMode = switch (current) {
+      AudioServiceRepeatMode.none => AudioServiceRepeatMode.all,
+      AudioServiceRepeatMode.all => AudioServiceRepeatMode.one,
+      AudioServiceRepeatMode.one => AudioServiceRepeatMode.none,
+      _ => AudioServiceRepeatMode.none,
+    };
 
-  void toggleShuffle() {
-    _isShuffling = !_isShuffling;
-    if (_isShuffling) _generateShuffledIndices(preserveCurrent: true);
-    notifyListeners();
-  }
-
-  void _generateShuffledIndices({bool preserveCurrent = false}) {
-    final originalIndices = List.generate(_playlist.length, (i) => i);
-    if (preserveCurrent) {
-      originalIndices.remove(_currentIndex);
-      originalIndices.shuffle();
-      _shuffledIndices = [_currentIndex, ...originalIndices];
-    } else {
-      originalIndices.shuffle();
-      _shuffledIndices = originalIndices;
+    if (_handler is AudioPlayerHandler) {
+      await (_handler as AudioPlayerHandler).setRepeatMode(newMode);
+      notifyListeners();
     }
   }
 
-  void toggleLoopPlaylist() {
-    _isLooping = !_isLooping;
-    _isLoopingOne = false;
-    _audioHandler.setRepeatMode(
-      _isLooping ? AudioServiceRepeatMode.all : AudioServiceRepeatMode.none,
-    );
-    notifyListeners();
-  }
-
-  void toggleLoopOne() {
-    _isLoopingOne = !_isLoopingOne;
-    _isLooping = false;
-    _audioHandler.setRepeatMode(
-      _isLoopingOne ? AudioServiceRepeatMode.one : AudioServiceRepeatMode.none,
-    );
-    notifyListeners();
-  }
-
-  // ───────── Favorites ─────────
-
+  // --- Favorites ---
   void toggleFavorite(Song song) {
     if (_favoriteSongIds.contains(song.id)) {
       _favoriteSongIds.remove(song.id);
@@ -214,44 +174,39 @@ class PlayerProvider extends ChangeNotifier {
   }
 
   bool isFavorite(Song song) => _favoriteSongIds.contains(song.id);
-  Set<String> get favoriteSongIds => _favoriteSongIds;
 
-  // ───────── UI Getters ─────────
+  // --- Internal listening ---
+  void _listenToHandler() {
+    _playbackSub = _handler.playbackState.listen((state) {
+      _isPlaying = state.playing;
+      notifyListeners();
+    });
 
-  Song? get currentSong =>
-      (_playlist.isNotEmpty && _currentIndex < _playlist.length)
-          ? _playlist[_currentIndex]
-          : null;
+    _mediaItemSub = _handler.mediaItem.listen((item) {
+      if (item != null) {
+        _currentSong = Song.fromMediaItem(item);
+        _totalDuration = item.duration ?? Duration.zero;
+        notifyListeners();
+      }
+    });
+  }
 
-  bool get isPlaying =>
-      _audioHandler.playbackState.value.playing &&
-      _audioHandler.playbackState.value.processingState !=
-          AudioProcessingState.idle;
+  void _updateCurrentSong() {
+    if (_handler is AudioPlayerHandler) {
+      final idx = (_handler as AudioPlayerHandler).player.currentIndex;
+      if (idx != null && idx >= 0 && idx < _playlist.length) {
+        _currentSong = _playlist[idx];
+        notifyListeners();
+      }
+    }
+  }
 
-  Duration get currentPosition => _currentPosition;
-  Duration get totalDuration => _totalDuration;
-
-  bool get isShuffling => _isShuffling;
-  bool get isLooping => _isLooping;
-  bool get isLoopingOne => _isLoopingOne;
-
-  List<Song> get queue => _isShuffling
-      ? _shuffledIndices.map((i) => _playlist[i]).toList()
-      : _playlist;
-
-  int get currentIndex => _currentIndex;
-
-  // ───────── Progress Stream for UI (e.g., MiniPlayer) ─────────
-
-  Stream<double> get progressStream =>
-      Stream.periodic(const Duration(milliseconds: 200)).asyncMap((_) async {
-        if (_audioHandler is AudioPlayerHandler) {
-          final handler = _audioHandler as AudioPlayerHandler;
-          final position = await handler.getCurrentPosition();
-          final duration = _totalDuration;
-          if (duration.inMilliseconds == 0) return 0.0;
-          return position.inMilliseconds / duration.inMilliseconds;
-        }
-        return 0.0;
-      });
+  @override
+  void dispose() {
+    _playbackSub?.cancel();
+    _mediaItemSub?.cancel();
+    _positionSub?.cancel();
+    _durationSub?.cancel();
+    super.dispose();
+  }
 }
