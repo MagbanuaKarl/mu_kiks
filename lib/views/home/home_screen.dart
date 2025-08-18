@@ -7,7 +7,7 @@ import 'package:mu_kiks/providers/import.dart';
 
 class HomeScreen extends StatefulWidget {
   final List<Song> songs;
-  final Future<void> Function()? onScanRequested; // ✅ Changed to async-friendly
+  final Future<void> Function()? onScanRequested; // ✅ Async-friendly refresh
 
   const HomeScreen({
     super.key,
@@ -33,7 +33,7 @@ class _HomeScreenState extends State<HomeScreen> {
     setState(() {
       filteredSongs = widget.songs.where((song) {
         final titleMatch = song.title.toLowerCase().contains(lowerQuery);
-        final artistMatch = song.artist.toLowerCase().contains(lowerQuery);
+        final artistMatch = (song.artist).toLowerCase().contains(lowerQuery);
         return titleMatch || artistMatch;
       }).toList();
     });
@@ -72,6 +72,7 @@ class _HomeScreenState extends State<HomeScreen> {
               const SizedBox(height: 16),
               PlaybackControlsRow(
                 onSortSelected: _sortSongs,
+                allSongs: filteredSongs, // ✅ pass current filtered songs
               ),
               const SizedBox(height: 16),
               Expanded(
@@ -99,11 +100,14 @@ class _HomeScreenState extends State<HomeScreen> {
                               onTap: () async {
                                 final playerProvider =
                                     context.read<PlayerProvider>();
+
+                                // ✅ Start playlist from selected song
                                 await playerProvider.setPlaylist(
                                   filteredSongs,
                                   startIndex: index,
                                 );
                                 playerProvider.play();
+
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(

@@ -22,7 +22,10 @@ class PlaylistSongTile extends StatelessWidget {
     return InkWell(
       onTap: () async {
         final playerProvider = context.read<PlayerProvider>();
-        await playerProvider.playFromPlaylist(playlist, song);
+        await playerProvider.playFromPlaylist(
+          playlist,
+          startSong: song, // ✅ pass the tapped song
+        );
         Navigator.push(
           context,
           MaterialPageRoute(

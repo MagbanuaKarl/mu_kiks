@@ -4,10 +4,8 @@ import 'package:audio_service/audio_service.dart';
 
 import 'config/theme.dart';
 import 'providers/import.dart';
-import 'providers/song_provider.dart'; // ✅ Add this import
 import 'views/import.dart';
 import 'services/import.dart';
-import 'models/import.dart';
 import 'widgets/mini_player/import.dart';
 
 late final AudioHandler _audioHandler;
