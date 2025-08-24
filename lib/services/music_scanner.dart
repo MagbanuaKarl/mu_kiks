@@ -13,9 +13,7 @@ class MusicScanner {
     List<Song> songList = [];
 
     final hasPermission = await PermissionUtils.requestAllNeededPermissions();
-    if (!hasPermission) {
-      return songList;
-    }
+    if (!hasPermission) return songList;
 
     // 1. Find all MP3s from external storage
     final rootDir = Directory('/storage/emulated/0');
@@ -42,6 +40,7 @@ class MusicScanner {
         path: file.path,
         duration: duration,
         dateAdded: fileStat.changed,
+        fileSizeBytes: fileStat.size, // <-- new field populated here
       ));
     }
 
@@ -68,6 +67,7 @@ class MusicScanner {
         path: file.path,
         duration: duration,
         dateAdded: fileStat.changed,
+        fileSizeBytes: fileStat.size, // <-- new field populated here
       ));
     }
 

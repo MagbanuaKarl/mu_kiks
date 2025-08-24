@@ -13,6 +13,7 @@ class Song extends Equatable {
   final String? artworkPath; // Optional local cover art
   final DateTime dateAdded; // For sorting by time added
   final int playCount; // For sorting by most played
+  final int fileSizeBytes; // New field: file size in bytes
 
   const Song({
     required this.id,
@@ -24,10 +25,10 @@ class Song extends Equatable {
     this.artworkPath,
     required this.dateAdded,
     this.playCount = 0,
+    required this.fileSizeBytes, // new field
   });
 
   // ---------- Persistence (Map/JSON) ----------
-
   factory Song.fromMap(Map<String, dynamic> map) {
     return Song(
       id: map['id'] as String,
@@ -44,6 +45,9 @@ class Song extends Equatable {
       playCount: (map['playCount'] is int)
           ? map['playCount'] as int
           : int.tryParse(map['playCount']?.toString() ?? '0') ?? 0,
+      fileSizeBytes: (map['fileSizeBytes'] is int)
+          ? map['fileSizeBytes'] as int
+          : int.tryParse(map['fileSizeBytes']?.toString() ?? '0') ?? 0,
     );
   }
 
@@ -58,6 +62,7 @@ class Song extends Equatable {
       'artworkPath': artworkPath,
       'dateAdded': dateAdded.toIso8601String(),
       'playCount': playCount,
+      'fileSizeBytes': fileSizeBytes,
     };
   }
 
@@ -66,17 +71,14 @@ class Song extends Equatable {
   Map<String, dynamic> toJson() => toMap();
 
   // ---------- AudioService interop ----------
-
-  /// Convert Song → MediaItem (used by AudioHandler queue)
   MediaItem toMediaItem() {
     return MediaItem(
-      id: path, // or use `id` if you prefer UUID-based ids
+      id: path,
       title: title,
       artist: artist,
       album: album,
       duration: duration,
       artUri: artworkPath != null ? Uri.file(artworkPath!) : null,
-      // Store all fields for round-trip safety
       extras: {
         'id': id,
         'title': title,
@@ -87,16 +89,15 @@ class Song extends Equatable {
         'artworkPath': artworkPath,
         'dateAdded': dateAdded.toIso8601String(),
         'playCount': playCount,
+        'fileSizeBytes': fileSizeBytes,
       },
     );
   }
 
-  /// Convert MediaItem → Song (used by PlayerProvider when listening to mediaItem)
   factory Song.fromMediaItem(MediaItem item) {
     final extras = item.extras ?? const <String, dynamic>{};
-
     String? artworkFromExtras = extras['artworkPath'] as String?;
-    String? artworkFromUri = item.artUri?.path; // file://... -> /path
+    String? artworkFromUri = item.artUri?.path;
     final artwork = artworkFromExtras ?? artworkFromUri;
 
     return Song(
@@ -115,11 +116,13 @@ class Song extends Equatable {
       playCount: (extras['playCount'] is int)
           ? extras['playCount'] as int
           : int.tryParse(extras['playCount']?.toString() ?? '0') ?? 0,
+      fileSizeBytes: (extras['fileSizeBytes'] is int)
+          ? extras['fileSizeBytes'] as int
+          : int.tryParse(extras['fileSizeBytes']?.toString() ?? '0') ?? 0,
     );
   }
 
   // ---------- Utilities ----------
-
   Song copyWith({
     String? id,
     String? title,
@@ -130,6 +133,7 @@ class Song extends Equatable {
     String? artworkPath,
     DateTime? dateAdded,
     int? playCount,
+    int? fileSizeBytes,
   }) {
     return Song(
       id: id ?? this.id,
@@ -141,6 +145,7 @@ class Song extends Equatable {
       artworkPath: artworkPath ?? this.artworkPath,
       dateAdded: dateAdded ?? this.dateAdded,
       playCount: playCount ?? this.playCount,
+      fileSizeBytes: fileSizeBytes ?? this.fileSizeBytes,
     );
   }
 
@@ -158,5 +163,6 @@ class Song extends Equatable {
         artworkPath,
         dateAdded,
         playCount,
+        fileSizeBytes,
       ];
 }

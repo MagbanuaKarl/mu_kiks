@@ -29,7 +29,13 @@ class SongProvider extends ChangeNotifier {
 
     try {
       final scannedSongs = await scanFunction();
-      _songs = scannedSongs;
+
+      // Apply recommended filters: duration < 40s or size < 2MB
+      _songs = scannedSongs.where((song) {
+        final isLongEnough = song.duration.inSeconds >= 40;
+        final isLargeEnough = song.fileSizeBytes >= 2 * 1024 * 1024; // 2MB
+        return isLongEnough && isLargeEnough;
+      }).toList();
     } catch (e) {
       debugPrint('Error scanning songs: $e');
     } finally {
