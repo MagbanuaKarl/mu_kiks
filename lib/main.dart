@@ -34,7 +34,7 @@ class MuKiksApp extends StatelessWidget {
           create: (_) => PlaylistProvider(),
         ),
         ChangeNotifierProvider(
-          create: (_) => SongProvider(), // ✅ Provide SongProvider globally
+          create: (_) => SongProvider(),
         ),
       ],
       child: MaterialApp(
@@ -121,7 +121,7 @@ class _HomeInitializerState extends State<HomeInitializer> {
     return Scaffold(
       body: HomeScreen(
         songs: songProvider.songs,
-        onScanRequested: () => songProvider.scanSongs(), // ✅ Trigger full scan
+        onScanRequested: () => songProvider.scanSongs(),
       ),
       bottomNavigationBar: const MiniPlayer(),
     );

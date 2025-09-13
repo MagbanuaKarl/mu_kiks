@@ -27,54 +27,44 @@ class MusicScanner {
     final muKiksMp3s = await FileUtils.scanMp3Files(muKiksDir);
 
     // 4. Convert to Song objects
-    for (var file in muKiksMp3s) {
-      final duration = await _getDurationPlaceholder(file);
-      final name = p.basenameWithoutExtension(file.path);
-      final fileStat = await file.stat();
-
-      songList.add(Song(
-        id: const Uuid().v4(),
-        title: name,
-        artist: 'Unknown Artist',
-        album: 'Unknown Album',
-        path: file.path,
-        duration: duration,
-        dateAdded: fileStat.changed,
-        fileSizeBytes: fileStat.size, // <-- new field populated here
-      ));
-    }
-
+    songList = await _mapFilesToSongs(muKiksMp3s);
     return songList;
   }
 
   /// Quick scan of MuKiks folder (no moving files)
   static Future<List<Song>> quickScan() async {
-    List<Song> songList = [];
-
     final muKiksDir = await FileUtils.getMuKiksMusicDirectory();
     final muKiksMp3s = await FileUtils.scanMp3Files(muKiksDir);
-
-    for (var file in muKiksMp3s) {
-      final duration = await _getDurationPlaceholder(file);
-      final name = p.basenameWithoutExtension(file.path);
-      final fileStat = await file.stat();
-
-      songList.add(Song(
-        id: const Uuid().v4(),
-        title: name,
-        artist: 'Unknown Artist',
-        album: 'Unknown Album',
-        path: file.path,
-        duration: duration,
-        dateAdded: fileStat.changed,
-        fileSizeBytes: fileStat.size, // <-- new field populated here
-      ));
-    }
-
-    return songList;
+    return _mapFilesToSongs(muKiksMp3s);
   }
 
-  /// Private helpers
+  /// -------- Sorting Helpers --------
+  static List<Song> sortByTitle(List<Song> songs, {bool ascending = true}) {
+    songs.sort((a, b) =>
+        ascending ? a.title.compareTo(b.title) : b.title.compareTo(a.title));
+    return songs;
+  }
+
+  static List<Song> sortByDateAdded(List<Song> songs,
+      {bool newestFirst = true}) {
+    songs.sort((a, b) => newestFirst
+        ? b.dateAdded.compareTo(a.dateAdded)
+        : a.dateAdded.compareTo(b.dateAdded));
+    return songs;
+  }
+
+  /// -------- Filtering Helper --------
+  static List<Song> filterSongs(List<Song> songs, String query) {
+    final lowerQuery = query.toLowerCase();
+    return songs.where((song) {
+      final titleMatch = song.title.toLowerCase().contains(lowerQuery);
+      final artistMatch =
+          song.artist?.toLowerCase().contains(lowerQuery) ?? false;
+      return titleMatch || artistMatch;
+    }).toList();
+  }
+
+  /// -------- Private Helpers --------
   static Future<List<File>> _scanMp3FilesWithErrorHandling(
       Directory directory) async {
     List<File> mp3Files = [];
@@ -110,6 +100,28 @@ class MusicScanner {
     } catch (_) {
       print('Skipping directory ${directory.path}: Access denied');
     }
+  }
+
+  static Future<List<Song>> _mapFilesToSongs(List<File> files) async {
+    List<Song> songs = [];
+    for (var file in files) {
+      final duration = await _getDurationPlaceholder(file);
+      final name = p.basenameWithoutExtension(file.path);
+      final fileStat = await file.stat();
+
+      songs.add(Song(
+        id: const Uuid().v4(),
+        title: name,
+        artist:
+            'Unknown Artist', // could be enhanced later with metadata reader
+        album: 'Unknown Album',
+        path: file.path,
+        duration: duration,
+        dateAdded: fileStat.changed,
+        fileSizeBytes: fileStat.size,
+      ));
+    }
+    return songs;
   }
 
   static Future<Duration> _getDurationPlaceholder(File file) async {

@@ -1,4 +1,5 @@
-// lib/providers/player_provider.dart
+// Manages the music player itself (what’s currently playing). It’s about control (play, pause, next, seek).
+
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:audio_service/audio_service.dart';

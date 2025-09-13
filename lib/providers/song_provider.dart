@@ -1,64 +1,65 @@
-// lib/providers/song_provider.dart
+// Manages your music library (the collection of available songs). It’s about data (what songs exist), not playback.
 
 import 'package:flutter/material.dart';
 import 'package:mu_kiks/models/song_model.dart';
-import 'package:mu_kiks/services/import.dart';
+import 'package:mu_kiks/services/music_scanner.dart';
 
 class SongProvider extends ChangeNotifier {
   List<Song> _songs = [];
   bool _isScanning = false;
 
-  List<Song> get songs => _songs;
+  List<Song> get songs => List.unmodifiable(_songs); // expose as read-only
   bool get isScanning => _isScanning;
 
-  /// Full scan: scans entire device for songs
+  /// Run a full scan (moves files + rebuilds library)
   Future<void> scanSongs() async {
-    await _performScan(MusicScanner.scan);
-  }
-
-  /// Quick scan: scans only a specific directory or faster path
-  Future<void> quickScanSongs() async {
-    await _performScan(MusicScanner.quickScan);
-  }
-
-  /// Shared scan handler for both scan types
-  Future<void> _performScan(Future<List<Song>> Function() scanFunction) async {
-    if (_isScanning) return; // Prevent multiple scans at the same time
     _isScanning = true;
     notifyListeners();
 
     try {
-      final scannedSongs = await scanFunction();
-
-      // Apply recommended filters: duration < 40s or size < 2MB
-      _songs = scannedSongs.where((song) {
-        final isLongEnough = song.duration.inSeconds >= 40;
-        final isLargeEnough = song.fileSizeBytes >= 2 * 1024 * 1024; // 2MB
-        return isLongEnough && isLargeEnough;
-      }).toList();
-    } catch (e) {
-      debugPrint('Error scanning songs: $e');
+      _songs = await MusicScanner.scan();
+      // Default sort by title (A–Z)
+      _songs = MusicScanner.sortByTitle(_songs);
     } finally {
       _isScanning = false;
       notifyListeners();
     }
   }
 
-  /// Add a song to the list
-  void addSong(Song song) {
-    _songs.add(song);
+  /// Quick scan (only scans MuKiks directory)
+  Future<void> quickScanSongs() async {
+    _isScanning = true;
+    notifyListeners();
+
+    try {
+      _songs = await MusicScanner.quickScan();
+      // Default sort by title
+      _songs = MusicScanner.sortByTitle(_songs);
+    } finally {
+      _isScanning = false;
+      notifyListeners();
+    }
+  }
+
+  /// Sorting options
+  void sortByTitle({bool ascending = true}) {
+    _songs = MusicScanner.sortByTitle(_songs, ascending: ascending);
     notifyListeners();
   }
 
-  /// Remove a song from the list by id
-  void removeSong(String id) {
-    _songs.removeWhere((song) => song.id == id);
+  void sortByDateAdded({bool newestFirst = true}) {
+    _songs = MusicScanner.sortByDateAdded(_songs, newestFirst: newestFirst);
     notifyListeners();
   }
 
-  /// Clear all songs
+  /// Filtering (returns a new list, does not change _songs)
+  List<Song> filterSongs(String query) {
+    return MusicScanner.filterSongs(_songs, query);
+  }
+
+  /// Clear library (e.g., when user logs out or resets app)
   void clearSongs() {
-    _songs.clear();
+    _songs = [];
     notifyListeners();
   }
 }
